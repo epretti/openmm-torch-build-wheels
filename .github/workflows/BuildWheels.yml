@@ -44,7 +44,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -v --pre -r devtools/requirements/${{ matrix.requirements }}.txt
-          pip install -v torch==2.3
+          pip install -v torch==2.6
 
       - name: "Install dependencies with yum"
         run: |
