@@ -1,0 +1,36 @@
+name: OpenMM-Torch-Build-Wheels
+
+env:
+  GIT_REVISION: 'wheels'
+  VERSION_SUFFIX: ''
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  linux:
+    runs-on: ${{ matrix.os }}
+    container:
+      image: quay.io/pypa/manylinux_2_28_x86_64
+    name: "${{ matrix.name }} ${{ matrix.python-version}}"
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+        include:
+          - name: Linux x86
+            os: ubuntu-latest
+            requirements: linux
+            cuda-version: "12-4"
+            cuda-arch: "x86_64"
+            hip-version: "6"
+
+    steps:
+      - name: "Test"
+        shell: bash -l {0}
+        run: |
+          echo
