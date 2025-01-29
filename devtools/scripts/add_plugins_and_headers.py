@@ -22,8 +22,7 @@ else:
             print('    ignorefiles:', ignorefiles)
         return ignorefiles
 for filename in os.listdir('.'):
-    if filename.endswith('.whl'):
+    if filename.startswith("openmmtorch") and filename.endswith('.whl'):
         print('filename:', filename)
         with wheeltools.InWheel(filename, filename):
-            shutil.copytree(join(install_dir, 'lib'), 'OpenMM.libs/lib', dirs_exist_ok=True, ignore=ignore)
-            # shutil.copytree(join(install_dir, 'include'), 'OpenMM.libs/include', dirs_exist_ok=True)
+            shutil.copytree(join(install_dir, 'lib'), 'openmmtorch.libs/lib', dirs_exist_ok=True, ignore=ignore)

@@ -106,7 +106,7 @@ jobs:
           cd dist
           export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
           export LD_LIBRARY_PATH=${SITE_PACKAGES}/OpenMM.libs/lib
-          # python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "!CUDA" "!HIP"
+          python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "!CUDA" "!HIP"
           auditwheel repair -w fixed -L ".libs/lib" --plat manylinux_2_28_x86_64 openmmtorch*.whl \
             --exclude libOpenMM.so \
             --exclude libOpenMMHIP.so \
@@ -135,7 +135,7 @@ jobs:
             --exclude libnvrtc.so.12 \
             --exclude libnvJitLink.so.12 \
             --exclude libhiprtc.so.6 \
-            --exclude libamdhip64.so.6 || true
+            --exclude libamdhip64.so.6
 
 #      - name: "Build CUDA wheel"
 #        shell: bash -l {0}
