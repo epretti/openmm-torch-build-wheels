@@ -1,7 +1,7 @@
 name: OpenMM-Torch-Build-Wheels
 
 env:
-  GIT_REVISION: 'wheels'
+  GIT_REVISION: '9ef733c071f70a77588ac0f076b1a7a0848a7550' # v1.5
   VERSION_SUFFIX: ''
 
 on:
@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     container:
       image: quay.io/pypa/manylinux_2_28_x86_64
-    name: "${{ matrix.name }} ${{ matrix.python-version}}"
+    name: "${{ matrix.name }} ${{ matrix.python-version }}"
     strategy:
       matrix:
         python-version: ["3.10"]
@@ -64,7 +64,7 @@ jobs:
 
       - name: "Check out OpenMM-Torch source code"
         run: |
-          git clone https://github.com/peastman/openmm-torch.git
+          git clone https://github.com/openmm/openmm-torch.git
           cd openmm-torch
           git checkout $GIT_REVISION
           git apply $GITHUB_WORKSPACE/devtools/patches/cxx11_abi.patch
@@ -77,7 +77,7 @@ jobs:
           mkdir build
           cd build
           export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
-          cmake .. \
+          cmake --trace-expand .. \
             -DCMAKE_INSTALL_PREFIX=${SITE_PACKAGES}/OpenMM.libs \
             -DOPENMM_DIR=${SITE_PACKAGES}/OpenMM.libs \
             -DTorch_DIR=${SITE_PACKAGES}/torch/share/cmake/Torch \
