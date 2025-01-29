@@ -48,7 +48,7 @@ jobs:
 
       - name: "Install dependencies with yum"
         run: |
-          yum -y install zip opencl-headers ocl-icd
+          yum -y install zip opencl-headers ocl-icd tree
 
       - name: "Install CUDA"
         run: |
@@ -71,6 +71,11 @@ jobs:
           git apply $GITHUB_WORKSPACE/devtools/patches/cxx11_abi.patch
           git apply $GITHUB_WORKSPACE/devtools/patches/extras_require.patch
 
+      - name: "Tell me everything in the system"
+        run: |
+          cd /
+          tree || true
+
       - name: "Configure build with CMake"
         shell: bash -l {0}
         run: |
@@ -87,7 +92,8 @@ jobs:
             -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
             -DCMAKE_CUDA_HOST_COMPILER=c++ \
             -DOPENCL_INCLUDE_DIR=/usr/include/CL \
-            -DOPENCL_LIBRARY=/usr/lib64/libOpenCL.so.1
+            -DOPENCL_LIBRARY=/usr/lib64/libOpenCL.so.1 \
+            -DUSE_SYSTEM_NVTX
 
       - name: "Build OpenMM-Torch"
         shell: bash -l {0}
@@ -179,9 +185,9 @@ jobs:
           ls -l python/dist/fixed
 #          python -c "import openmmtorch; f = openmmtorch.TorchForce('tests/forces.pt')"
 
-      - name: "Upload the wheel"
-        uses: actions/upload-artifact@v4
-        with:
-          name: openmm-torch-wheel-linux-${{matrix.python-version}}
-          path: openmm-torch/build/python/dist/fixed
-          retention-days: 10
+          # - name: "Upload the wheel"
+          #   uses: actions/upload-artifact@v4
+          #   with:
+          #     name: openmm-torch-wheel-linux-${{matrix.python-version}}
+          #     path: openmm-torch/build/python/dist/fixed
+          #     retention-days: 10
