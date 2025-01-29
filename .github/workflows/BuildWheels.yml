@@ -48,7 +48,7 @@ jobs:
 
       - name: "Install dependencies with yum"
         run: |
-          yum -y install zip opencl-headers ocl-icd tree
+          yum -y install zip opencl-headers ocl-icd
 
       - name: "Install CUDA"
         run: |
@@ -71,11 +71,6 @@ jobs:
           git apply $GITHUB_WORKSPACE/devtools/patches/cxx11_abi.patch
           git apply $GITHUB_WORKSPACE/devtools/patches/extras_require.patch
 
-      - name: "Tell me everything in the system"
-        run: |
-          cd /
-          tree || true
-
       - name: "Configure build with CMake"
         shell: bash -l {0}
         run: |
@@ -93,7 +88,7 @@ jobs:
             -DCMAKE_CUDA_HOST_COMPILER=c++ \
             -DOPENCL_INCLUDE_DIR=/usr/include/CL \
             -DOPENCL_LIBRARY=/usr/lib64/libOpenCL.so.1 \
-            -DUSE_SYSTEM_NVTX
+            -DUSE_SYSTEM_NVTX=1
 
       - name: "Build OpenMM-Torch"
         shell: bash -l {0}
