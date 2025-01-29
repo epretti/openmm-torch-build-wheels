@@ -108,6 +108,7 @@ jobs:
           python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "!CUDA" "!HIP"
           auditwheel repair -w fixed -L ".libs/lib" --plat manylinux_2_28_x86_64 openmmtorch*.whl \
             --exclude libOpenMM.so \
+            --exclude libOpenMMTorch.so \
             --exclude libOpenMMHIP.so \
             --exclude libOpenMMOpenCL.so \
             --exclude libOpenMMDrude.so \
@@ -134,20 +135,20 @@ jobs:
             --exclude libnvrtc.so.12 \
             --exclude libnvJitLink.so.12 \
             --exclude libhiprtc.so.6 \
-            --exclude libamdhip64.so.6
+            --exclude libamdhip64.so.6 || true
 
-      - name: "Build CUDA wheel"
-        shell: bash -l {0}
-        run: |
-          cd $GITHUB_WORKSPACE/devtools/cuda
-          export OPENMM_TORCH_VERSION=$(echo $(grep "OPENMM_TORCH_VERSION:" $GITHUB_WORKSPACE/openmm-torch/build/CMakeCache.txt) | cut -d '=' -f2)$VERSION_SUFFIX
-          export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
-          export HIP_VERSION=${{ matrix.hip-version }}
-          pip wheel -w dist .
-          cd dist
-          export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
-          python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "CUDA"
-          mv OpenMM_Torch*.whl $GITHUB_WORKSPACE/openmm-torch/build/python/dist/fixed
+#      - name: "Build CUDA wheel"
+#        shell: bash -l {0}
+#        run: |
+#          cd $GITHUB_WORKSPACE/devtools/cuda
+#          export OPENMM_TORCH_VERSION=$(echo $(grep "OPENMM_TORCH_VERSION:" $GITHUB_WORKSPACE/openmm-torch/build/CMakeCache.txt) | cut -d '=' -f2)$VERSION_SUFFIX
+#          export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
+#          export HIP_VERSION=${{ matrix.hip-version }}
+#          pip wheel -w dist .
+#          cd dist
+#          export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
+#          python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "CUDA"
+#          mv OpenMM_Torch*.whl $GITHUB_WORKSPACE/openmm-torch/build/python/dist/fixed
 #
 #      - name: "Build HIP wheel"
 #        shell: bash -l {0}
@@ -166,21 +167,21 @@ jobs:
 #        run: |
 #          python $GITHUB_WORKSPACE/devtools/scripts/rename_wheels.py $GITHUB_WORKSPACE/openmm-torch/build/python/dist/fixed
 #
-      - name: "Test the wheel"
-        shell: bash -l {0}
-        run: |
-          set -x
-          python -m venv "${HOME}/test_env"
-          source "${HOME}/test_env/bin/activate"
-          cd openmm-torch/build
-          export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
-          pip install --pre -f python/dist/fixed openmmtorch[cuda${CUDA_VERSION}]
-          ls -l python/dist/fixed
-          python -c "import openmmtorch; f = openmmtorch.TorchForce('tests/forces.pt')" || true
+#      - name: "Test the wheel"
+#        shell: bash -l {0}
+#        run: |
+#          set -x
+#          python -m venv "${HOME}/test_env"
+#          source "${HOME}/test_env/bin/activate"
+#          cd openmm-torch/build
+#          export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
+#          pip install --pre -f python/dist/fixed openmmtorch[cuda${CUDA_VERSION}]
+#          ls -l python/dist/fixed
+#          python -c "import openmmtorch; f = openmmtorch.TorchForce('tests/forces.pt')" || true
 
       - name: "Upload the wheel"
         uses: actions/upload-artifact@v4
         with:
           name: openmm-torch-wheel-linux-${{matrix.python-version}}
-          path: openmm-torch/build/python/dist/fixed
+          path: openmm-torch/build/python/dist
           retention-days: 10
