@@ -16,7 +16,8 @@ jobs:
   linux:
     runs-on: ${{ matrix.os }}
     container:
-      image: quay.io/pypa/manylinux_2_28_x86_64
+      # Use a version of manylinux with GCC 13, not 14, for NVCC compatibility
+      image: quay.io/pypa/manylinux_2_28_x86_64:2024.11.23-1
     name: "${{ matrix.name }} ${{ matrix.python-version }}"
     strategy:
       matrix:
@@ -47,8 +48,7 @@ jobs:
 
       - name: "Install dependencies with yum"
         run: |
-          apt install -y zip opencl-headers ocl-icd gcc-13
-          update-alternatives --query gcc
+          yum -y install zip opencl-headers ocl-icd
 
       - name: "Install CUDA"
         run: |
