@@ -101,14 +101,14 @@ jobs:
         run: |
           cd openmm-torch/build/python
           export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
+          export HIP_VERSION=${{ matrix.hip-version }}
           pip wheel -w dist .
-          export LD_LIBRARY_PATH=${HOME}/openmm-install/lib
           cd dist
           export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
-          python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "!CUDA" "!HIP"
+          export LD_LIBRARY_PATH=${SITE_PACKAGES}/OpenMM.libs/lib
+          # python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "!CUDA" "!HIP"
           auditwheel repair -w fixed -L ".libs/lib" --plat manylinux_2_28_x86_64 openmmtorch*.whl \
             --exclude libOpenMM.so \
-            --exclude libOpenMMTorch.so \
             --exclude libOpenMMHIP.so \
             --exclude libOpenMMOpenCL.so \
             --exclude libOpenMMDrude.so \
@@ -167,21 +167,22 @@ jobs:
 #        run: |
 #          python $GITHUB_WORKSPACE/devtools/scripts/rename_wheels.py $GITHUB_WORKSPACE/openmm-torch/build/python/dist/fixed
 #
-#      - name: "Test the wheel"
-#        shell: bash -l {0}
-#        run: |
-#          set -x
-#          python -m venv "${HOME}/test_env"
-#          source "${HOME}/test_env/bin/activate"
-#          cd openmm-torch/build
-#          export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
-#          pip install --pre -f python/dist/fixed openmmtorch[cuda${CUDA_VERSION}]
-#          ls -l python/dist/fixed
-#          python -c "import openmmtorch; f = openmmtorch.TorchForce('tests/forces.pt')" || true
+      - name: "Test the wheel"
+        shell: bash -l {0}
+        run: |
+          set -x
+          python -m venv "${HOME}/test_env"
+          source "${HOME}/test_env/bin/activate"
+          cd openmm-torch/build
+          #export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
+          #pip install --pre -f python/dist/fixed openmmtorch[cuda${CUDA_VERSION}]
+          pip install --pre -f python/dist/fixed openmmtorch
+          ls -l python/dist/fixed
+          python -c "import openmmtorch; f = openmmtorch.TorchForce('tests/forces.pt')" || true
 
       - name: "Upload the wheel"
         uses: actions/upload-artifact@v4
         with:
           name: openmm-torch-wheel-linux-${{matrix.python-version}}
-          path: openmm-torch/build/python/dist
+          path: openmm-torch/build/python/dist/fixed
           retention-days: 10
