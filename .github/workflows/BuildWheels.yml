@@ -47,7 +47,8 @@ jobs:
 
       - name: "Install dependencies with yum"
         run: |
-          yum -y install zip opencl-headers ocl-icd
+          apt install -y zip opencl-headers ocl-icd gcc-13
+          update-alternatives --query gcc
 
       - name: "Install CUDA"
         run: |
@@ -84,7 +85,7 @@ jobs:
             -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0' \
             -DCMAKE_CUDA_ARCHITECTURES=OFF \
             -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
-            -DCMAKE_CUDA_HOST_COMPILER=g++-13 \
+            -DCMAKE_CUDA_HOST_COMPILER=c++ \
             -DOPENCL_INCLUDE_DIR=/usr/include/CL \
             -DOPENCL_LIBRARY=/usr/lib64/libOpenCL.so.1
 
