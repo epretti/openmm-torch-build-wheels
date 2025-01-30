@@ -16,7 +16,6 @@ jobs:
   linux:
     runs-on: ${{ matrix.os }}
     container:
-      # Use a version of manylinux with GCC 13, not 14, for NVCC compatibility
       image: quay.io/pypa/manylinux_2_28_x86_64:2024.11.23-1
     name: "${{ matrix.name }} ${{ matrix.python-version }}"
     strategy:
@@ -26,7 +25,7 @@ jobs:
           - name: Linux x86
             os: ubuntu-latest
             requirements: linux
-            cuda-version: "12-6"
+            cuda-version: "12-4"
             cuda-arch: "x86_64"
             hip-version: "6"
 
@@ -57,11 +56,11 @@ jobs:
                          cuda-libraries-devel-${{ matrix.cuda-version }}.${{ matrix.cuda-arch }} \
                          cuda-nvtx-${{ matrix.cuda-version }}.${{ matrix.cuda-arch }}
 
-      - name: "Install HIP"
-        run: |
-          yum install -y epel-release
-          yum install -y https://repo.radeon.com/amdgpu-install/6.2.2/el/8.10/amdgpu-install-6.2.60202-1.el8.noarch.rpm
-          yum install -y rocm-device-libs hip-devel hip-runtime-amd hipcc
+#      - name: "Install HIP"
+#        run: |
+#          yum install -y epel-release
+#          yum install -y https://repo.radeon.com/amdgpu-install/6.2.2/el/8.10/amdgpu-install-6.2.60202-1.el8.noarch.rpm
+#          yum install -y rocm-device-libs hip-devel hip-runtime-amd hipcc
 
       - name: "Check out OpenMM-Torch source code"
         run: |
@@ -85,7 +84,6 @@ jobs:
             -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0 -Wl,--allow-shlib-undefined' \
             -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
             -DCMAKE_CUDA_HOST_COMPILER=c++ \
-            -DCMAKE_PREFIX_PATH=/opt/rocm \
             -DOPENCL_INCLUDE_DIR=/usr/include/CL \
             -DOPENCL_LIBRARY=/usr/lib64/libOpenCL.so.1
 
@@ -102,7 +100,6 @@ jobs:
           cd openmm-torch/build/python
           export OPENMM_TORCH_VERSION=$(echo $(grep "OPENMM_TORCH_VERSION:" $GITHUB_WORKSPACE/openmm-torch/build/CMakeCache.txt) | cut -d '=' -f2)$VERSION_SUFFIX
           export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
-          export HIP_VERSION=${{ matrix.hip-version }}
           pip wheel -w dist .
           cd dist
           export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
@@ -146,7 +143,6 @@ jobs:
           cd $GITHUB_WORKSPACE/devtools/cuda
           export OPENMM_TORCH_VERSION=$(echo $(grep "OPENMM_TORCH_VERSION:" $GITHUB_WORKSPACE/openmm-torch/build/CMakeCache.txt) | cut -d '=' -f2)$VERSION_SUFFIX
           export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
-          export HIP_VERSION=${{ matrix.hip-version }}
           pip wheel -w dist .
           cd dist
           export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
@@ -177,8 +173,6 @@ jobs:
           python -m venv "${HOME}/test_env"
           source "${HOME}/test_env/bin/activate"
           cd openmm-torch/build
-          #export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
-          #pip install --pre -f python/dist/fixed openmmtorch[cuda${CUDA_VERSION}]
           pip install --pre -f python/dist/fixed openmmtorch
           ls -l python/dist/fixed
           python -c "import openmmtorch; f = openmmtorch.TorchForce('tests/forces.pt')"
