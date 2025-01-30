@@ -173,9 +173,12 @@ jobs:
           python -m venv "${HOME}/test_env"
           source "${HOME}/test_env/bin/activate"
           cd openmm-torch/build
-          pip install --pre -f python/dist/fixed openmmtorch
-          ls -l python/dist/fixed
+          export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
+          pip install --pre -f python/dist/fixed openmmtorch[cuda${CUDA_VERSION}]
           python -c "import openmmtorch; f = openmmtorch.TorchForce('tests/forces.pt')"
+          cd
+          cd openmm-torch/python/tests
+          for test_file in Test*.py; do pytest "${test_file}"; done
 
       - name: "Upload the wheel"
         uses: actions/upload-artifact@v4

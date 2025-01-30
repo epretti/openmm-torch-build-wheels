@@ -44,8 +44,5 @@ for filename in os.listdir('.'):
                     subprocess.run(['patchelf', '--remove-rpath', soname], check=True)
                     subprocess.run(['patchelf', '--force-rpath', '--set-rpath', ':'.join(new_rpath), soname], check=True)
             for soname in os.listdir('OpenMM.libs/lib/plugins'):
-                # These need an rpath to look in the parent directory for
-                # libOpenMMTorch.so; it doesn't get loaded by _openmm.*.so with
-                # libOpenMM.so and for some reason it can't then be found by the
-                # plugins...
-                subprocess.run(['patchelf', '--force-rpath', '--set-rpath', '$ORIGIN/..', os.path.join('OpenMM.libs/lib/plugins', soname)])
+                # These need an rpath that doesn't get added automatically
+                subprocess.run(['patchelf', '--force-rpath', '--set-rpath', '$ORIGIN/..:$ORIGIN/../../../torch/lib', os.path.join('OpenMM.libs/lib/plugins', soname)])
