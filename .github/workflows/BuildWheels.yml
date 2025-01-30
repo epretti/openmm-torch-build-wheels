@@ -177,10 +177,7 @@ jobs:
           pip install pytest
           pip install --pre -f python/dist/fixed openmmtorch[cuda${CUDA_VERSION}]
           python -m openmm.testInstallation
-          python -c "import openmm; print(*openmm.Platform.getPluginLoadFailures(), sep=\"\\n\")"
-          python -c "import openmmtorch; f = openmmtorch.TorchForce('tests/forces.pt')"
-          cd
-          cd openmm-torch/python/tests
+          cd ../python/tests
           for test_file in Test*.py; do pytest "${test_file}"; done
 
       - name: "Upload the wheel"
