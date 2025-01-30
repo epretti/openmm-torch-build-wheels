@@ -1,4 +1,4 @@
-openmm[cuda12]
+openmm
 pybind11
 cmake
 swig
