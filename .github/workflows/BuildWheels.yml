@@ -108,6 +108,7 @@ jobs:
           python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "!CUDA" "!HIP"
           auditwheel repair -w fixed --plat manylinux_2_28_x86_64 openmmtorch*.whl \
             --exclude libOpenMM.so \
+            --exclude libOpenMMTorch.so \
             --exclude libOpenMMHIP.so \
             --exclude libOpenMMOpenCL.so \
             --exclude libOpenMMDrude.so \
