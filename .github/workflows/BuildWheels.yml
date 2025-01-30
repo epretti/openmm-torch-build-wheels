@@ -40,10 +40,10 @@ jobs:
             python=${{ matrix.python-version }}
           init-shell: bash
 
-      - name: "Install dependencies with pip"
-        shell: bash -l {0}
-        run: |
-          pip install -v --pre -r devtools/requirements/${{ matrix.requirements }}.txt
+#      - name: "Install dependencies with pip"
+#        shell: bash -l {0}
+#        run: |
+#          pip install -v --pre -r devtools/requirements/${{ matrix.requirements }}.txt
 
       - name: "Install dependencies with yum"
         run: |
@@ -56,6 +56,14 @@ jobs:
                          cuda-libraries-${{ matrix.cuda-version }}.${{ matrix.cuda-arch }} \
                          cuda-libraries-devel-${{ matrix.cuda-version }}.${{ matrix.cuda-arch }} \
                          cuda-nvtx-${{ matrix.cuda-version }}.${{ matrix.cuda-arch }}
+
+      - name: "See what's available in cuda"
+        shell: bash -l {0}
+        run: |
+          find /usr/local/cuda || true
+          find /usr/local/lib/cuda || true
+          find /usr/lib || true
+          false
 
 #      - name: "Install HIP"
 #        run: |
@@ -180,7 +188,7 @@ jobs:
           #pip install --pre -f python/dist/fixed openmmtorch[cuda${CUDA_VERSION}]
           pip install --pre -f python/dist/fixed openmmtorch
           ls -l python/dist/fixed
-          python -c "import openmmtorch; f = openmmtorch.TorchForce('tests/forces.pt')" || true
+          python -c "import openmmtorch; f = openmmtorch.TorchForce('tests/forces.pt')"
 
       - name: "Upload the wheel"
         uses: actions/upload-artifact@v4
