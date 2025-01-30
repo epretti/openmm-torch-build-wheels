@@ -40,10 +40,10 @@ jobs:
             python=${{ matrix.python-version }}
           init-shell: bash
 
-#      - name: "Install dependencies with pip"
-#        shell: bash -l {0}
-#        run: |
-#          pip install -v --pre -r devtools/requirements/${{ matrix.requirements }}.txt
+      - name: "Install dependencies with pip"
+        shell: bash -l {0}
+        run: |
+          pip install -v --pre -r devtools/requirements/${{ matrix.requirements }}.txt
 
       - name: "Install dependencies with yum"
         run: |
@@ -60,9 +60,7 @@ jobs:
       - name: "See what's available in cuda"
         shell: bash -l {0}
         run: |
-          find /usr/local/cuda || true
-          find /usr/local/lib/cuda || true
-          find /usr/lib || true
+          find / -iname "cuda" || true
           false
 
 #      - name: "Install HIP"
