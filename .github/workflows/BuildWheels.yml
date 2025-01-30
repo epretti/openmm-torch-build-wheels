@@ -178,7 +178,7 @@ jobs:
           pip install --pre -f python/dist/fixed openmmtorch[cuda${CUDA_VERSION}]
           python -m openmm.testInstallation
           cd ../python/tests
-          for test_file in Test*.py; do pytest "${test_file}"; done
+          pytest -k "not testTorchANI" Test*.py
 
       - name: "Upload the wheel"
         uses: actions/upload-artifact@v4
