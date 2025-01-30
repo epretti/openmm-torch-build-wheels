@@ -1,0 +1,13 @@
+diff --git a/python/setup.py b/python/setup.py
+index 99d5797..e9c0337 100644
+--- a/python/setup.py
++++ b/python/setup.py
+@@ -9,7 +9,7 @@ nn_plugin_library_dir = '@NN_PLUGIN_LIBRARY_DIR@'
+ torch_dir, _ = os.path.split('@TORCH_LIBRARY@')
+
+ # setup extra compile and link arguments on Mac
+-extra_compile_args = ['-std=c++17']
++extra_compile_args = ['-std=c++17', '-D_GLIBCXX_USE_CXX11_ABI=0']
+ extra_link_args = []
+
+ if platform.system() == 'Darwin':

@@ -1,0 +1,10 @@
+openmm[cuda12]
+pybind11
+cmake
+swig
+numpy
+delocate
+wheel
+auditwheel
+setuptools
+torch

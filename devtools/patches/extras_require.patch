@@ -1,0 +1,18 @@
+diff --git a/python/setup.py b/python/setup.py
+index db6b9bb..e3490c6 100644
+--- a/python/setup.py
++++ b/python/setup.py
+@@ -27,9 +27,12 @@ extension = Extension(name='_openmmtorch',
+                       extra_link_args=extra_link_args
+                      )
+
++CUDA_VERSION=os.getenv('CUDA_VERSION')
++HIP_VERSION=os.getenv('HIP_VERSION')
+ setup(name='openmmtorch',
+       version=version,
+       py_modules=['openmmtorch'],
+       ext_modules=[extension],
+-      install_requires=['openmm', 'torch']
++      install_requires=['openmm', 'torch'],
++      extras_require={f"cuda{CUDA_VERSION}": [f"OpenMM-Torch-CUDA-{CUDA_VERSION}=={version}"], f"hip{HIP_VERSION}": [f"OpenMM-Torch-HIP-{HIP_VERSION}=={version}"]}
+      )

@@ -1,7 +1,7 @@
 name: OpenMM-Torch-Build-Wheels
 
 env:
-  GIT_REVISION: 'wheels'
+  GIT_REVISION: '9ef733c071f70a77588ac0f076b1a7a0848a7550'
   VERSION_SUFFIX: ''
 
 on:
@@ -16,11 +16,11 @@ jobs:
   linux:
     runs-on: ${{ matrix.os }}
     container:
-      image: quay.io/pypa/manylinux_2_28_x86_64
-    name: "${{ matrix.name }} ${{ matrix.python-version}}"
+      image: quay.io/pypa/manylinux_2_28_x86_64:2024.11.23-1
+    name: "${{ matrix.name }} ${{ matrix.python-version }}"
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         include:
           - name: Linux x86
             os: ubuntu-latest
@@ -30,7 +30,159 @@ jobs:
             hip-version: "6"
 
     steps:
-      - name: "Test"
+      - uses: actions/checkout@v3
+
+      - uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-name: build-env
+          create-args: >-
+            python=${{ matrix.python-version }}
+          init-shell: bash
+
+      - name: "Install dependencies with pip"
         shell: bash -l {0}
         run: |
-          echo
+          pip install -v --pre -r devtools/requirements/${{ matrix.requirements }}.txt
+
+      - name: "Install dependencies with yum"
+        run: |
+          yum -y install zip opencl-headers ocl-icd
+
+      - name: "Install CUDA"
+        run: |
+          dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/${{ matrix.cuda-arch }}/cuda-rhel8.repo
+          dnf -y install cuda-compiler-${{ matrix.cuda-version }}.${{ matrix.cuda-arch }} \
+                         cuda-libraries-${{ matrix.cuda-version }}.${{ matrix.cuda-arch }} \
+                         cuda-libraries-devel-${{ matrix.cuda-version }}.${{ matrix.cuda-arch }} \
+                         cuda-nvtx-${{ matrix.cuda-version }}.${{ matrix.cuda-arch }}
+
+#      - name: "Install HIP"
+#        run: |
+#          yum install -y epel-release
+#          yum install -y https://repo.radeon.com/amdgpu-install/6.2.2/el/8.10/amdgpu-install-6.2.60202-1.el8.noarch.rpm
+#          yum install -y rocm-device-libs hip-devel hip-runtime-amd hipcc
+
+      - name: "Check out OpenMM-Torch source code"
+        run: |
+          git clone https://github.com/openmm/openmm-torch.git
+          cd openmm-torch
+          git checkout $GIT_REVISION
+          git apply $GITHUB_WORKSPACE/devtools/patches/cxx11_abi.patch
+          git apply $GITHUB_WORKSPACE/devtools/patches/extras_require.patch
+
+      - name: "Configure build with CMake"
+        shell: bash -l {0}
+        run: |
+          cd openmm-torch
+          mkdir build
+          cd build
+          export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
+          cmake .. \
+            -DCMAKE_INSTALL_PREFIX=${SITE_PACKAGES}/OpenMM.libs \
+            -DOPENMM_DIR=${SITE_PACKAGES}/OpenMM.libs \
+            -DTorch_DIR=${SITE_PACKAGES}/torch/share/cmake/Torch \
+            -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0 -Wl,--allow-shlib-undefined' \
+            -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
+            -DCMAKE_CUDA_HOST_COMPILER=c++ \
+            -DOPENCL_INCLUDE_DIR=/usr/include/CL \
+            -DOPENCL_LIBRARY=/usr/lib64/libOpenCL.so.1
+
+      - name: "Build OpenMM-Torch"
+        shell: bash -l {0}
+        run: |
+          cd openmm-torch/build
+          make -j4 install
+          make -j4 PythonInstall
+
+      - name: "Build wheel"
+        shell: bash -l {0}
+        run: |
+          cd openmm-torch/build/python
+          export OPENMM_TORCH_VERSION=$(echo $(grep "OPENMM_TORCH_VERSION:" $GITHUB_WORKSPACE/openmm-torch/build/CMakeCache.txt) | cut -d '=' -f2)$VERSION_SUFFIX
+          export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
+          pip wheel -w dist .
+          cd dist
+          export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
+          python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "!CUDA" "!HIP"
+          auditwheel repair -w fixed --plat manylinux_2_28_x86_64 openmmtorch*.whl \
+            --exclude libOpenMM.so \
+            --exclude libOpenMMTorch.so \
+            --exclude libOpenMMHIP.so \
+            --exclude libOpenMMOpenCL.so \
+            --exclude libOpenMMDrude.so \
+            --exclude libOpenMMAmoeba.so \
+            --exclude libOpenMMRPMD.so \
+            --exclude libOpenCL.so.1 \
+            --exclude libtorch.so \
+            --exclude libtorch_cpu.so \
+            --exclude libtorch_gpu.so \
+            --exclude libtorch_cuda.so \
+            --exclude libc10.so \
+            --exclude libc10_cuda.so \
+            --exclude libcuda.so.1 \
+            --exclude libcudart.so.12 \
+            --exclude libcufft.so.11 \
+            --exclude libcufft.so.10 \
+            --exclude libcusparse.so.12 \
+            --exclude libcurand.so.10 \
+            --exclude libcublas.so.12 \
+            --exclude libcublasLt.so.12 \
+            --exclude libcudnn.so.9 \
+            --exclude libcupti.so.12 \
+            --exclude libcusolver.so.11 \
+            --exclude libnccl.so.2 \
+            --exclude libnvrtc.so.11.2 \
+            --exclude libnvrtc.so.12 \
+            --exclude libnvJitLink.so.12 \
+            --exclude libhiprtc.so.6 \
+            --exclude libamdhip64.so.6
+
+      - name: "Build CUDA wheel"
+        shell: bash -l {0}
+        run: |
+          cd $GITHUB_WORKSPACE/devtools/cuda
+          export OPENMM_TORCH_VERSION=$(echo $(grep "OPENMM_TORCH_VERSION:" $GITHUB_WORKSPACE/openmm-torch/build/CMakeCache.txt) | cut -d '=' -f2)$VERSION_SUFFIX
+          export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
+          pip wheel -w dist .
+          cd dist
+          export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
+          python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "CUDA"
+          mv OpenMM_Torch*.whl $GITHUB_WORKSPACE/openmm-torch/build/python/dist/fixed
+
+#      - name: "Build HIP wheel"
+#        shell: bash -l {0}
+#        run: |
+#          cd $GITHUB_WORKSPACE/devtools/hip
+#          export OPENMM_VERSION=$(echo $(grep "OPENMM_VERSION:" $GITHUB_WORKSPACE/openmm/build/CMakeCache.txt) | cut -d '=' -f2)$VERSION_SUFFIX
+#          export HIP_VERSION=${{ matrix.hip-version }}
+#          python setup.py bdist_wheel
+#          cd dist
+#          export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
+#          python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "HIP"
+#          mv OpenMM_Torch*.whl $GITHUB_WORKSPACE/openmm-torch/build/python/dist/fixed
+
+#      - name: "Rename wheels"
+#        shell: bash -l {0}
+#        run: |
+#          python $GITHUB_WORKSPACE/devtools/scripts/rename_wheels.py $GITHUB_WORKSPACE/openmm-torch/build/python/dist/fixed
+#
+      - name: "Test the wheel"
+        shell: bash -l {0}
+        run: |
+          set -x
+          python -m venv "${HOME}/test_env"
+          source "${HOME}/test_env/bin/activate"
+          cd openmm-torch/build
+          export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
+          pip install pytest
+          pip install --pre -f python/dist/fixed openmmtorch[cuda${CUDA_VERSION}]
+          python -m openmm.testInstallation
+          cd ../python/tests
+          pytest -k "not testTorchANI" Test*.py
+
+      - name: "Upload the wheel"
+        uses: actions/upload-artifact@v4
+        with:
+          name: openmm-torch-wheel-linux-${{matrix.python-version}}
+          path: openmm-torch/build/python/dist/fixed
+          retention-days: 10
