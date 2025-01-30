@@ -86,6 +86,7 @@ jobs:
             -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
             -DCMAKE_CUDA_ARCHITECTURES=OFF \
             -DCMAKE_CUDA_HOST_COMPILER=c++ \
+            -DNN_BUILD_CUDA_LIB=OFF \
             -DOPENCL_INCLUDE_DIR=/usr/include/CL \
             -DOPENCL_LIBRARY=/usr/lib64/libOpenCL.so.1
 
