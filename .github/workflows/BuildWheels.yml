@@ -60,7 +60,8 @@ jobs:
       - name: "See what's available in cuda"
         shell: bash -l {0}
         run: |
-          find / -iname '*cuda*' || true
+          readlink -f /usr/local/cuda
+          find -L $(readlink -f /usr/local/cuda)
           false
 
 #      - name: "Install HIP"
