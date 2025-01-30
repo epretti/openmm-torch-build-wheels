@@ -57,13 +57,6 @@ jobs:
                          cuda-libraries-devel-${{ matrix.cuda-version }}.${{ matrix.cuda-arch }} \
                          cuda-nvtx-${{ matrix.cuda-version }}.${{ matrix.cuda-arch }}
 
-      - name: "See what's available in cuda"
-        shell: bash -l {0}
-        run: |
-          readlink -f /usr/local/cuda
-          find -L $(readlink -f /usr/local/cuda)
-          false
-
 #      - name: "Install HIP"
 #        run: |
 #          yum install -y epel-release
@@ -89,9 +82,8 @@ jobs:
             -DCMAKE_INSTALL_PREFIX=${SITE_PACKAGES}/OpenMM.libs \
             -DOPENMM_DIR=${SITE_PACKAGES}/OpenMM.libs \
             -DTorch_DIR=${SITE_PACKAGES}/torch/share/cmake/Torch \
-            -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0' \
+            -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0 -lcuda' \
             -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
-            -DCMAKE_CUDA_ARCHITECTURES=OFF \
             -DCMAKE_CUDA_HOST_COMPILER=c++ \
             -DOPENCL_INCLUDE_DIR=/usr/include/CL \
             -DOPENCL_LIBRARY=/usr/lib64/libOpenCL.so.1
