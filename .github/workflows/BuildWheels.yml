@@ -174,7 +174,10 @@ jobs:
           source "${HOME}/test_env/bin/activate"
           cd openmm-torch/build
           export CUDA_VERSION=$(cut -d '-' -f1 <<< ${{ matrix.cuda-version }})
+          pip install pytest
           pip install --pre -f python/dist/fixed openmmtorch[cuda${CUDA_VERSION}]
+          python -m openmm.testInstallation
+          python -c "import openmm; print(*openmm.Platform.getPluginLoadFailures(), sep=\"\\n\")"
           python -c "import openmmtorch; f = openmmtorch.TorchForce('tests/forces.pt')"
           cd
           cd openmm-torch/python/tests
