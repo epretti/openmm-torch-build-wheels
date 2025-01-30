@@ -85,6 +85,7 @@ jobs:
             -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0 -Wl,--allow-shlib-undefined' \
             -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
             -DCMAKE_CUDA_HOST_COMPILER=c++ \
+            -DCMAKE_PREFIX_PATH=/opt/rocm \
             -DOPENCL_INCLUDE_DIR=/usr/include/CL \
             -DOPENCL_LIBRARY=/usr/lib64/libOpenCL.so.1
 
@@ -152,17 +153,17 @@ jobs:
           python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "CUDA"
           mv OpenMM_Torch*.whl $GITHUB_WORKSPACE/openmm-torch/build/python/dist/fixed
 
-      - name: "Build HIP wheel"
-        shell: bash -l {0}
-        run: |
-          cd $GITHUB_WORKSPACE/devtools/hip
-          export OPENMM_VERSION=$(echo $(grep "OPENMM_VERSION:" $GITHUB_WORKSPACE/openmm/build/CMakeCache.txt) | cut -d '=' -f2)$VERSION_SUFFIX
-          export HIP_VERSION=${{ matrix.hip-version }}
-          python setup.py bdist_wheel
-          cd dist
-          export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
-          python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "HIP"
-          mv OpenMM_Torch*.whl $GITHUB_WORKSPACE/openmm-torch/build/python/dist/fixed
+#      - name: "Build HIP wheel"
+#        shell: bash -l {0}
+#        run: |
+#          cd $GITHUB_WORKSPACE/devtools/hip
+#          export OPENMM_VERSION=$(echo $(grep "OPENMM_VERSION:" $GITHUB_WORKSPACE/openmm/build/CMakeCache.txt) | cut -d '=' -f2)$VERSION_SUFFIX
+#          export HIP_VERSION=${{ matrix.hip-version }}
+#          python setup.py bdist_wheel
+#          cd dist
+#          export SITE_PACKAGES=$(python -c 'import site; print(site.getsitepackages()[0])')
+#          python $GITHUB_WORKSPACE/devtools/scripts/add_plugins_and_headers.py "${SITE_PACKAGES}/OpenMM.libs" "Torch" "HIP"
+#          mv OpenMM_Torch*.whl $GITHUB_WORKSPACE/openmm-torch/build/python/dist/fixed
 
 #      - name: "Rename wheels"
 #        shell: bash -l {0}
